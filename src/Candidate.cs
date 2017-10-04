@@ -63,7 +63,7 @@ namespace Fsi.Osumimas.Sudoku {
 		}
 		
 		private void RefreshToolTip() {
-//			cell.GridCell.ToolTipText = Count > 0 ? string.Format("[{0}]", string.Join(",", this)) : "";
+			cell.GridCell.ToolTipText = Count > 0 ? string.Format("[{0}]", string.Join(",", this)) : "";
 		}
 	}
 }
