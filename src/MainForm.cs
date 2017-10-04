@@ -8,6 +8,7 @@ namespace Fsi.Osumimas.Sudoku {
 	public class MainForm : Form {
 		private const int CELL_WIDTH = 36;
 		private const int CELL_HEIGHT = 36;
+		private const int LOG_TEXT_HEIGHT = 100;
 		private const double REPEAT_INTERVAL = 1000.0;
 		
 		private Table table;
@@ -22,8 +23,7 @@ namespace Fsi.Osumimas.Sudoku {
 		
 		public MainForm() {
 			this.Text = "sudoku";
-			this.FormBorderStyle = FormBorderStyle.FixedSingle;
-			this.MaximizeBox = false;
+			this.FormBorderStyle = FormBorderStyle.Sizable;
 			
 			this.repeatTimer = new System.Timers.Timer();
 			this.repeatTimer.Elapsed += (sender, e) => { Solve(); };
@@ -49,7 +49,15 @@ namespace Fsi.Osumimas.Sudoku {
 			this.logTextBox = InitLogTextBox();
 			this.Controls.Add(this.logTextBox);
 			
-			this.Size = Sudoku.FormSize(this.grid, this.logTextBox);
+			this.AutoSize = true;
+			this.MaximumSize = new Size(this.Size.Width, SystemInformation.MaxWindowTrackSize.Height);
+			this.MinimumSize = new Size(this.Size.Width, this.Size.Height);
+			this.AutoSize = false;
+			
+			this.Resize += (sender, e) => {
+				MainForm f = (MainForm)sender;
+				this.logTextBox.Height = LOG_TEXT_HEIGHT + f.Size.Height - f.MinimumSize.Height;
+			};
 			
 			this.Load += (sender, e) => {
 				Clear();
@@ -139,7 +147,7 @@ namespace Fsi.Osumimas.Sudoku {
 			logTextBox.ScrollBars = ScrollBars.Vertical;
 			logTextBox.ReadOnly = true;
 			logTextBox.Width = this.grid.Width;
-			logTextBox.Height = 100;
+			logTextBox.Height = LOG_TEXT_HEIGHT;
 			logTextBox.Location = Sudoku.Location(null, this.loadButton);
 			return logTextBox;
 		}
