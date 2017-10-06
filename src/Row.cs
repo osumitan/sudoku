@@ -33,7 +33,7 @@ namespace Fsi.Osumimas.Sudoku {
 		}
 		
 		internal override void AddCell(Cell cell) {
-			Row row = this[cell.Index / Table.CELL_COUNT];
+			Row row = this[cell.Index / base.table.Dimension.CellCount()];
 			row.Add(cell);
 			cell.Row = row;
 		}

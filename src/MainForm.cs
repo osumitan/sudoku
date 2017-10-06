@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
@@ -6,8 +7,7 @@ using System.Windows.Forms;
 namespace Fsi.Osumimas.Sudoku {
 
 	public class MainForm : Form {
-		private const int CELL_WIDTH = 36;
-		private const int CELL_HEIGHT = 36;
+		private const Dimension DEFAULT_DIMENSION = Dimension.D3;
 		private const int LOG_TEXT_HEIGHT = 100;
 		private const double REPEAT_INTERVAL = 1000.0;
 		
@@ -17,13 +17,14 @@ namespace Fsi.Osumimas.Sudoku {
 		private Button nextButton;
 		private Button pauseButton;
 		private Button repeatButton;
+		private ComboBox dimensionComboBox;
 		private TextBox logTextBox;
 		private FormStatus status;
 		private System.Timers.Timer repeatTimer;
 		
 		public MainForm() {
 			this.Text = "sudoku";
-			this.FormBorderStyle = FormBorderStyle.Sizable;
+			this.FormBorderStyle = FormBorderStyle.FixedSingle;
 			
 			this.repeatTimer = new System.Timers.Timer();
 			this.repeatTimer.Elapsed += (sender, e) => { Solve(); };
@@ -46,23 +47,29 @@ namespace Fsi.Osumimas.Sudoku {
 			this.repeatButton = InitRepeatButton();
 			this.Controls.Add(this.repeatButton);
 			
+			this.dimensionComboBox = InitDimensionComboBox();
+			this.Controls.Add(this.dimensionComboBox);
+			
 			this.logTextBox = InitLogTextBox();
 			this.Controls.Add(this.logTextBox);
 			
-			this.AutoSize = true;
-			this.MaximumSize = new Size(this.Size.Width, SystemInformation.MaxWindowTrackSize.Height);
-			this.MinimumSize = new Size(this.Size.Width, this.Size.Height);
-			this.AutoSize = false;
-			
-			this.Resize += (sender, e) => {
-				MainForm f = (MainForm)sender;
-				this.logTextBox.Height = LOG_TEXT_HEIGHT + f.Size.Height - f.MinimumSize.Height;
-			};
-			
 			this.Load += (sender, e) => {
-				Clear();
+				this.Dimension = DEFAULT_DIMENSION;
 				Sudoku.Log("Initialized");
 			};
+		}
+		
+		private void Init() {
+			this.grid.Location = Sudoku.Location(null, null);
+			this.loadButton.Location = Sudoku.Location(null, this.grid);
+			this.nextButton.Location = Sudoku.Location(this.loadButton, this.grid);
+			this.pauseButton.Location = Sudoku.Location(this.nextButton, this.grid);
+			this.repeatButton.Location = Sudoku.Location(this.pauseButton, this.grid);
+			this.dimensionComboBox.Location = Sudoku.Location(this.repeatButton, this.grid);
+			this.logTextBox.Location = Sudoku.Location(null, this.loadButton);
+			this.logTextBox.Width = this.grid.Width;
+			this.Size = Sudoku.FormSize(this);
+			Clear();
 		}
 		
 		private DataGridView InitGrid() {
@@ -75,29 +82,17 @@ namespace Fsi.Osumimas.Sudoku {
 			grid.ReadOnly = true;
 			grid.RowHeadersVisible = false;
 			grid.ColumnHeadersVisible = false;
-			grid.DefaultCellStyle.Font = new Font("Meiryo UI", 16, FontStyle.Bold);
 			grid.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 			grid.SelectionChanged += (sender, e) => { this.grid.CurrentCell.Selected = false; };
 			grid.CellPainting += (sender, e) => {
-				if(e.RowIndex != 0 && e.RowIndex % Table.CELL_COUNT_SQRT == 0) {
+				if(e.RowIndex != 0 && e.RowIndex % this.table.Dimension.Value() == 0) {
 					e.AdvancedBorderStyle.Top = DataGridViewAdvancedCellBorderStyle.InsetDouble;
 				}
-				if(e.ColumnIndex != 0 && e.ColumnIndex % Table.CELL_COUNT_SQRT == 0) {
+				if(e.ColumnIndex != 0 && e.ColumnIndex % this.table.Dimension.Value() == 0) {
 					e.AdvancedBorderStyle.Left = DataGridViewAdvancedCellBorderStyle.InsetDouble;
 				}
 			};
 			grid.ScrollBars = ScrollBars.None;
-			grid.Location = Sudoku.Location(null, null);
-			grid.Width = CELL_WIDTH * Table.CELL_COUNT;
-			grid.Height = CELL_HEIGHT * Table.CELL_COUNT;
-			for(int i = 0 ; i < Table.CELL_COUNT ; i++) {
-				grid.Columns.Add("", "");
-				grid.Columns[i].Width = CELL_WIDTH;
-			}
-			for(int i = 0 ; i < Table.CELL_COUNT ; i++) {
-				grid.Rows.Add();
-				grid.Rows[i].Height = CELL_HEIGHT;
-			}
 			return grid;
 		}
 		
@@ -105,9 +100,8 @@ namespace Fsi.Osumimas.Sudoku {
 			Button loadButton = new Button();
 			loadButton.Enabled = false;
 			loadButton.Text = "load";
-			loadButton.Location = Sudoku.Location(null, this.grid);
 			loadButton.Size = Sudoku.ButtonSize(loadButton);
-			loadButton.Click += (sender, e) => { new LoadForm(this, this.table.Export()).ShowDialog(); };
+			loadButton.Click += (sender, e) => { new LoadForm(this, this.table).ShowDialog(); };
 			return loadButton;
 		}
 		
@@ -115,7 +109,6 @@ namespace Fsi.Osumimas.Sudoku {
 			Button nextButton = new Button();
 			nextButton.Enabled = false;
 			nextButton.Text = ">";
-			nextButton.Location = Sudoku.Location(this.loadButton, this.grid);
 			nextButton.Size = Sudoku.ButtonSize(nextButton);
 			nextButton.Click += (sender, e) => { Solve(); };
 			return nextButton;
@@ -125,7 +118,6 @@ namespace Fsi.Osumimas.Sudoku {
 			Button pauseButton = new Button();
 			pauseButton.Enabled = false;
 			pauseButton.Text = "||";
-			pauseButton.Location = Sudoku.Location(this.nextButton, this.grid);
 			pauseButton.Size = Sudoku.ButtonSize(pauseButton);
 			pauseButton.Click += (sender, e) => { Status = FormStatus.Available; };
 			return pauseButton;
@@ -135,10 +127,29 @@ namespace Fsi.Osumimas.Sudoku {
 			Button repeatButton = new Button();
 			repeatButton.Enabled = false;
 			repeatButton.Text = ">>";
-			repeatButton.Location = Sudoku.Location(this.pauseButton, this.grid);
 			repeatButton.Size = Sudoku.ButtonSize(repeatButton);
 			repeatButton.Click += (sender, e) => { Status = FormStatus.Repeating; };
 			return repeatButton;
+		}
+		
+		private ComboBox InitDimensionComboBox() {
+			ComboBox dimensionComboBox = new ComboBox();
+			dimensionComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+			int width = 0;
+			List<KeyValuePair<string, Dimension>> dataSource = new List<KeyValuePair<string, Dimension>>();
+			foreach(Dimension dimension in Enum.GetValues(typeof(Dimension))) {
+				dataSource.Add(new KeyValuePair<string, Dimension>(dimension.Text(), dimension));
+				width = Math.Max(width, TextRenderer.MeasureText(dimension.Text(), dimensionComboBox.Font).Width);
+			}
+			dimensionComboBox.Width = width + 20;
+			dimensionComboBox.DisplayMember = "Key";
+			dimensionComboBox.ValueMember = "Value";
+			dimensionComboBox.DataSource = dataSource;
+			dimensionComboBox.SelectedIndexChanged += (sender, e) => {
+				this.table.Dimension = this.Dimension;
+				Init();
+			};
+			return dimensionComboBox;
 		}
 		
 		private TextBox InitLogTextBox() {
@@ -146,9 +157,7 @@ namespace Fsi.Osumimas.Sudoku {
 			logTextBox.Multiline = true;
 			logTextBox.ScrollBars = ScrollBars.Vertical;
 			logTextBox.ReadOnly = true;
-			logTextBox.Width = this.grid.Width;
-			logTextBox.Height = LOG_TEXT_HEIGHT;
-			logTextBox.Location = Sudoku.Location(null, this.loadButton);
+			logTextBox.Size = new Size(this.grid.Width, LOG_TEXT_HEIGHT);
 			return logTextBox;
 		}
 		
@@ -198,24 +207,32 @@ namespace Fsi.Osumimas.Sudoku {
 					this.pauseButton.Enabled = false;
 					this.repeatButton.Enabled = false;
 					if(this.repeatTimer.Enabled) this.repeatTimer.Stop();
+					this.dimensionComboBox.Enabled = true;
 				} else if(value == FormStatus.Available) {
 					this.loadButton.Enabled = true;
 					this.nextButton.Enabled = true;
 					this.pauseButton.Enabled = false;
 					this.repeatButton.Enabled = true;
 					if(this.repeatTimer.Enabled) this.repeatTimer.Stop();
+					this.dimensionComboBox.Enabled = true;
 				} else if(value == FormStatus.Repeating) {
 					this.loadButton.Enabled = false;
 					this.nextButton.Enabled = false;
 					this.pauseButton.Enabled = true;
 					this.repeatButton.Enabled = false;
 					this.repeatTimer.Start();
+					this.dimensionComboBox.Enabled = false;
 				}
 			}
 		}
 		
 		public void Log(string format, params object[] prms) {
 			this.logTextBox.AppendText(string.Format(format, prms) + "\r\n");
+		}
+		
+		public Dimension Dimension {
+			get { return (Dimension)this.dimensionComboBox.SelectedValue; }
+			set { this.dimensionComboBox.SelectedValue = value; }
 		}
 	}
 	

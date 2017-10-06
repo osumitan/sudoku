@@ -20,7 +20,7 @@ namespace Fsi.Osumimas.Sudoku {
 		
 		public void Init() {
 			Clear();
-			for(int i = 0 ; i < Table.CELL_COUNT ; i++) {
+			for(int i = 0 ; i < this.cell.Table.Dimension.CellCount() ; i++) {
 				Add(i + 1);
 			}
 			RefreshToolTip();

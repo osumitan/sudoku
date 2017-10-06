@@ -54,34 +54,18 @@ namespace Fsi.Osumimas.Sudoku {
 			return new Point(Neighbor(xc), Under(yc));
 		}
 		
-		public static Size FormSize(Control wc, Control hc) {
-			return new Size(Neighbor(wc) + MARGIN, SystemInformation.CaptionHeight + Under(hc) + MARGIN);
+		public static Size FormSize(Form form) {
+			int w = 0;
+			int h = 0;
+			foreach(Control c in form.Controls) {
+				w = Math.Max(w, Neighbor(c) + MARGIN);
+				h = Math.Max(h, SystemInformation.CaptionHeight + Under(c) + MARGIN);
+			}
+			return new Size(w, h);
 		}
 		
 		public static Size ButtonSize(Button button) {
 			return new Size(TextRenderer.MeasureText(" " + button.Text + " ", button.Font).Width, button.Height);
 		}
-	}
-	
-	public class SudokuException : Exception {
-		public SudokuException(string message) : base(message) {}
-	}
-	
-	public class ContradictionException : SudokuException {
-		public ContradictionException(string message) : base(message) {}
-	}
-	
-	public class HasNoCandidateException : ContradictionException {
-		private static string MSG(Cell cell) {
-			return string.Format("{0} has no candidate", cell);
-		}
-		public HasNoCandidateException(Cell cell) : base(MSG(cell)) {}
-	}
-	
-	public class ValueNotAcceptedException : ContradictionException {
-		private static string MSG(Cell cell, int value) {
-			return string.Format("{0} does not accept {1}", cell, value);
-		}
-		public ValueNotAcceptedException(Cell cell, int value) : base(MSG(cell, value)) {}
 	}
 }

@@ -18,7 +18,7 @@ namespace Fsi.Osumimas.Sudoku {
 		}
 		
 		internal override void AddCell(Cell cell) {
-			Col col = this[cell.Index % Table.CELL_COUNT];
+			Col col = this[cell.Index % base.table.Dimension.CellCount()];
 			col.Add(cell);
 			cell.Col = col;
 		}

@@ -16,7 +16,7 @@ namespace Fsi.Osumimas.Sudoku {
 		}
 		
 		public Cell SolveSingleCandidate() {
-			for(int value = 1 ; value <= Table.CELL_COUNT ; value++) {
+			for(int value = 1 ; value <= this.table.Dimension.CellCount() ; value++) {
 				List<Cell> c = new List<Cell>();
 				foreach(Cell cell in this) {
 					if(cell.ContainsCandidate(value)) {
@@ -40,7 +40,7 @@ namespace Fsi.Osumimas.Sudoku {
 		
 		public Groups(Table table) {
 			this.table = table;
-			for(int i = 0 ; i < Table.CELL_COUNT ; i++) {
+			for(int i = 0 ; i < this.table.Dimension.CellCount() ; i++) {
 				Add(createGroup());
 			}
 			foreach(Cell cell in this.table.Cells) {

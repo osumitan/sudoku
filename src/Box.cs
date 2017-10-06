@@ -18,9 +18,9 @@ namespace Fsi.Osumimas.Sudoku {
 		}
 		
 		internal override void AddCell(Cell cell) {
-			int br = cell.Row.Index / Table.CELL_COUNT_SQRT;
-			int bc = cell.Col.Index / Table.CELL_COUNT_SQRT;
-			Box box = this[br * Table.CELL_COUNT_SQRT + bc];
+			int br = cell.Row.Index / base.table.Dimension.Value();
+			int bc = cell.Col.Index / base.table.Dimension.Value();
+			Box box = this[br * base.table.Dimension.Value() + bc];
 			box.Add(cell);
 			cell.Box = box;
 		}

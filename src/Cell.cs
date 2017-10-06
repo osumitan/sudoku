@@ -58,7 +58,7 @@ namespace Fsi.Osumimas.Sudoku {
 		public int Value {
 			get { int r; return int.TryParse(this.cell.Value.ToString(), out r) ? r : BLANK; }
 			set {
-				if(value < 1 || Table.CELL_COUNT < value) {
+				if(value < 1 || this.table.Dimension.CellCount() < value) {
 					throw new ArgumentException(String.Format("{0} <= {1}", this, value));
 				}
 				cell.Value = value.ToString();
@@ -96,7 +96,7 @@ namespace Fsi.Osumimas.Sudoku {
 		public void Import(char c, AfterImport succeeded, AfterImport failed) {
 			try {
 				if(c != '_') {
-					Value = Convert.ToInt32(c) - Convert.ToInt32('0');
+					Value = this.table.Dimension.LoadChars().IndexOf(c);
 				}
 				if(succeeded != null) {
 					succeeded(this);
@@ -110,7 +110,7 @@ namespace Fsi.Osumimas.Sudoku {
 		}
 		
 		public char Export() {
-			return Blank ? '_' : Convert.ToChar(Value + Convert.ToInt32('0'));
+			return Blank ? '_' : this.table.Dimension.LoadChars()[Value];
 		}
 		
 		public void Flash() {
@@ -145,16 +145,17 @@ namespace Fsi.Osumimas.Sudoku {
 	
 	public enum CellType { Question, Answer, Error }
 	public static class CellTypeExt {
+		private static readonly Dictionary<CellType, Color> COLORS;
+		
+		static CellTypeExt() {
+			COLORS = new Dictionary<CellType, Color>();
+			COLORS[CellType.Question] = Color.Black;
+			COLORS[CellType.Answer] = Color.Blue;
+			COLORS[CellType.Error] = Color.Red;
+		}
+		
 		public static Color ForeColor(this CellType type) {
-			if(type == CellType.Question) {
-				return Color.Black;
-			} else if(type == CellType.Answer) {
-				return Color.Blue;
-			} else if(type == CellType.Error) {
-				return Color.Red;
-			} else {
-				return Color.Green;
-			}
+			return COLORS[type];
 		}
 	}
 	
